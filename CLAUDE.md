@@ -16,6 +16,7 @@ Read `PROJECT.md` (scope), `ARCHITECTURE.md` (decisions), and `ROADMAP.md` (curr
 - Changes another repo needs (for example, this game's portal card) go through a PR or issue on that repo.
 - On the production server, this game may only write to its own release folder and link: `/srv/games-releases/game-template/` and `/var/www/html/soncrant.com/pub/games/game-template` (enforced by `scripts/release-remote.sh`).
 - Local dev server port: **__DEV_PORT__**. Playwright's test server uses **__E2E_PORT__**. Other games use other ports.
+- Other games' sessions share this machine. Stop only processes you started, by PID or by your own port (e.g. the pid listening on your Playwright port). Never stop processes by name (`pkill -f vite`, `pkill -f "vite preview"`, `killall node`): that kills other sessions' servers mid-run.
 - This game's portal card is its own file in the portal repo, `games/game-template.json`. Change it only by PR to `soncsec/games-portal`.
 
 ## Always ask the owner before
