@@ -72,13 +72,15 @@ count() { find "$T/server/releases/game-template" -mindepth 1 -maxdepth 1 -type 
 # T1.3: a game can only release into its own slot.
 with_change() { # file, sed expression, command... : run with a temporary edit, then undo it
   local file="$1" expr="$2"; shift 2
-  cp "$file" "$T/backup" && sed -i "$expr" "$file" && git commit -qam tmp
+  sed -i "$expr" "$file"
+  git diff --quiet && { echo "with_change: '$expr' changed nothing in $file"; return 99; }
+  git commit -qam tmp
   "$@"; local rc=$?
   git reset -q --hard HEAD~1
   return $rc
 }
-out="$(with_change scripts/release.sh 's/^SLUG=.*/SLUG=star-destroyer/' release deploy)"
-if [[ "$out" == *"refusing to release into another game's slot"* && "$(count)" == 0 && ! -e "$T/server/web/star-destroyer" ]]; then
+out="$(with_change scripts/release.sh 's/^SLUG=.*/SLUG=other-game/' release deploy)"
+if [[ "$out" == *"refusing to release into another game's slot"* && "$(count)" == 0 && ! -e "$T/server/web/other-game" ]]; then
   ok "refuses another game's slug (package.json mismatch) and touches nothing"
 else bad "other slug: $out"; fi
 out="$(with_change scripts/release.sh 's/^SLUG=.*/SLUG=_portal/' release rollback)"
