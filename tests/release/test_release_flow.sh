@@ -52,7 +52,9 @@ SH
 chmod +x "$T/bin/"*
 
 # --- a throwaway repo whose HEAD is origin/main ---------------------------------------
-mkdir -p "$T/remote/soncsec" && git init -q --bare "$T/remote/soncsec/game-template.git"
+# The fake GitHub remote is named after this game (init-game.sh renames GAME_REPO).
+GAME_REPO=game-template
+mkdir -p "$T/remote/soncsec" && git init -q --bare "$T/remote/soncsec/$GAME_REPO.git"
 mkdir "$T/repo" && cd "$T/repo" || exit 1
 git init -q -b main
 # CI runners have no git identity; give this throwaway repo its own.
@@ -62,7 +64,7 @@ cp "$SRC/scripts/release.sh" "$SRC/scripts/release-remote.sh" "$SRC/scripts/smok
 printf 'dist/\ndeploy/server.env\n' >.gitignore
 printf '{"name": "game-template"}\n' >package.json
 git add -A && git commit -q -m init
-git remote add origin "$T/remote/soncsec/game-template.git" && git push -q origin main
+git remote add origin "$T/remote/soncsec/$GAME_REPO.git" && git push -q origin main
 touch "$T/fake_key"
 printf 'SERVER=127.0.0.1:%s\nSSH_USER=deploy\nSSH_KEY=%s\n' "$PORT" "$T/fake_key" >deploy/server.env
 
@@ -92,7 +94,7 @@ if [[ "$out" == *"package.json says 'other-game'"* ]]; then ok "refuses when pac
 git remote set-url origin "$T/remote/soncsec/other-game.git"
 out="$(release activate 20990101T000000Z-deadbeef)"
 if [[ "$out" == *"this repo's origin is"* ]]; then ok "refuses when the repo is another game's"; else bad "origin mismatch: $out"; fi
-git remote set-url origin "$T/remote/soncsec/game-template.git"
+git remote set-url origin "$T/remote/soncsec/$GAME_REPO.git"
 
 out="$(FAKE_CI=failure release deploy)"
 if [[ $? -ne 0 && "$out" == *"has not passed"* && "$(count)" == 0 ]]; then ok "refuses to release when CI failed"; else bad "CI gate: $out"; fi

@@ -44,6 +44,12 @@ if grep -q "<title>Rocket Race</title>" "$D/index.html"; then ok "page title set
 if [[ ! -e "$D/scripts/init-game.sh" && ! -e "$D/tests/template" ]]; then ok "setup removes itself and its test"; else bad "template machinery left behind"; fi
 if grep -q "soncsec/game-template" "$D/CLAUDE.md"; then ok "links to the template repo are kept"; else bad "template repo link was renamed"; fi
 if (cd "$D" && bash -n scripts/release.sh && bash -n scripts/release-remote.sh); then ok "scripts still parse"; else bad "scripts broken"; fi
+# The set-up game's own release tests must pass (they check its name, repo and package.json).
+if out="$(cd "$D" && bash tests/release/test_release_flow.sh 2>&1)"; then
+  ok "the new game's release tests pass"
+else
+  bad "release tests fail in the new game: $(grep FAIL <<<"$out" | head -3)"
+fi
 rm -rf "$D"
 
 echo
