@@ -34,7 +34,7 @@ if out="$(cd "$D" && bash scripts/init-game.sh rocket-race "Rocket Race" 5174 2>
 else
   bad "setup failed: $out"
 fi
-left="$(cd "$D" && grep -rIn -e game-template -e "Game Template" --exclude-dir=.git . | grep -v "soncsec/game-template" || true)"
+left="$( (cd "$D" && grep -rIn -e game-template -e "Game Template" --exclude-dir=.git .) | grep -v "soncsec/game-template" || true)"
 if [[ -z "$left" ]]; then ok "no template name or title left anywhere"; else bad "still mentions the template: $left"; fi
 if grep -q '"name": "rocket-race"' "$D/package.json" && grep -q '"name": "rocket-race"' "$D/package-lock.json"; then ok "package and lockfile renamed"; else bad "package name"; fi
 if grep -q "port: 5174, strictPort" "$D/vite.config.ts" && grep -q "port: 6174, strictPort" "$D/vite.config.ts" &&
