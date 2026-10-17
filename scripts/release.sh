@@ -57,8 +57,25 @@ smoke() {
   python3 scripts/smoke_test.py "http://$SERVER/$SLUG/" --host "$SITE_HOST" --title "$TITLE" "$@"
 }
 
+# This game may only ever release into its own slot on the server (T1.3):
+# SLUG must be this repo's name and its package.json name, and never a name
+# the portal uses. A copied script with another game's SLUG stops here.
+check_identity() {
+  case "$SLUG" in
+    _portal | assets | images) die "SLUG '$SLUG' is reserved for the portal" ;;
+  esac
+  [[ "$SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || die "SLUG '$SLUG' is not a valid game slug"
+  local pkg origin
+  pkg="$(python3 -c 'import json; print(json.load(open("package.json"))["name"])')"
+  [[ "$pkg" == "$SLUG" ]] || die "SLUG is '$SLUG' but package.json says '$pkg'; refusing to release into another game's slot"
+  origin="$(git remote get-url origin)"
+  [[ "$origin" =~ [:/]soncsec/${SLUG}(\.git)?$ ]] ||
+    die "SLUG is '$SLUG' but this repo's origin is $origin; refusing to release into another game's slot"
+}
+
 preflight() {
   step "Preflight"
+  check_identity
   [[ -z "$(git status --porcelain)" ]] || die "working tree has changes; release only committed code"
   git fetch -q origin main
   [[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] ||
@@ -141,6 +158,7 @@ cmd_deploy() {
 }
 
 cmd_rollback() {
+  check_identity
   load_env
   remote rollback "$SLUG"
   smoke
@@ -149,12 +167,14 @@ cmd_rollback() {
 cmd_activate() {
   local id="${1:-}"
   [[ -n "$id" ]] || die "usage: release.sh activate <release id> (see: release.sh status)"
+  check_identity
   load_env
   remote activate "$SLUG" "$id"
   smoke --release-id "$id"
 }
 
 cmd_status() {
+  check_identity
   load_env
   remote status "$SLUG"
 }
